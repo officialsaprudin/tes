@@ -117,7 +117,12 @@
 
         <!-- View: Dashboard -->
         <div id="view-dashboard" class="view-section">
-            <h2 id="dash-title" class="text-2xl font-bold mb-6 text-gray-800">Ringkasan Hari Ini</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="dash-title" class="text-2xl font-bold text-gray-800">Ringkasan Hari Ini</h2>
+                <button id="btn-edit-lembaga" onclick="openEditLembaga()" class="hidden bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-300 transition">
+                    <i class="fa-solid fa-pen mr-1"></i> Edit Lembaga
+                </button>
+            </div>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div class="bg-white p-4 rounded-xl shadow border-l-4 border-indigo-500">
@@ -333,6 +338,26 @@
         Berhasil disimpan!
     </div>
 
+    <!-- Modal Edit Lembaga -->
+    <div id="modal-lembaga" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg">Edit Nama Lembaga</h3>
+                <button onclick="closeEditLembaga()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form id="lembaga-form" class="p-6">
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Lembaga Baru</label>
+                    <input type="text" id="form-nama-lembaga" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditLembaga()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Firebase SDK (Modular v9) -->
     <script type="module">
         const is_preview = true; // Set ke false untuk produksi
@@ -347,7 +372,7 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         let db, auth;
@@ -471,11 +496,14 @@
                 
                 // Update Dashboard Title for Admin
                 const dashTitle = document.getElementById('dash-title');
+                const btnEditLembaga = document.getElementById('btn-edit-lembaga');
                 if (viewId === 'dashboard' && dashTitle) {
-                    if (currentUserRole === 'admin' && currentLembaga) {
-                        dashTitle.innerText = `Ringkasan Hari Ini - ${currentLembaga}`;
+                    if (currentUserRole === 'admin') {
+                        dashTitle.innerText = currentLembaga ? `Ringkasan Hari Ini - ${currentLembaga}` : `Ringkasan Hari Ini`;
+                        if(btnEditLembaga) btnEditLembaga.classList.remove('hidden');
                     } else {
                         dashTitle.innerText = `Ringkasan Hari Ini`;
+                        if(btnEditLembaga) btnEditLembaga.classList.add('hidden');
                     }
                 }
             }
@@ -841,6 +869,47 @@
             document.getElementById('modal-history').classList.remove('hidden');
         };
         window.closeHistory = () => document.getElementById('modal-history').classList.add('hidden');
+
+        // ==========================================
+        // FITUR EDIT LEMBAGA (KHUSUS ADMIN)
+        // ==========================================
+        window.openEditLembaga = () => {
+            if (currentUserRole !== 'admin') return;
+            document.getElementById('form-nama-lembaga').value = currentLembaga || '';
+            document.getElementById('modal-lembaga').classList.remove('hidden');
+        };
+
+        window.closeEditLembaga = () => document.getElementById('modal-lembaga').classList.add('hidden');
+
+        document.getElementById('lembaga-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (currentUserRole !== 'admin') return;
+            
+            const namaBaru = document.getElementById('form-nama-lembaga').value;
+            
+            if (is_preview) {
+                currentLembaga = namaBaru;
+                const em = document.getElementById('login-email').value.toLowerCase();
+                if(emailMap[em]) emailMap[em].lembaga = namaBaru;
+                
+                document.getElementById('dash-title').innerText = `Ringkasan Hari Ini - ${currentLembaga}`;
+                closeEditLembaga();
+                showToast();
+            } else {
+                try {
+                    const userId = auth.currentUser.uid;
+                    await updateDoc(doc(db, "users", userId), {
+                        lembaga: namaBaru
+                    });
+                    currentLembaga = namaBaru;
+                    document.getElementById('dash-title').innerText = `Ringkasan Hari Ini - ${currentLembaga}`;
+                    closeEditLembaga();
+                    showToast();
+                } catch(error) {
+                    alert("Gagal update lembaga: " + error.message);
+                }
+            }
+        });
 
         document.getElementById('filter-tanggal').valueAsDate = new Date();
         document.getElementById('filter-tanggal').addEventListener('change', renderRekap);
