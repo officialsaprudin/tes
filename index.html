@@ -205,7 +205,7 @@
             <div id="jurnal-section" class="bg-indigo-50 p-4 rounded-xl shadow-sm mb-6 hidden border border-indigo-100">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-indigo-800"><i class="fa-solid fa-book-journal-whills mr-2"></i> Jurnal Kelas Harian</h3>
-                    <button onclick="openJurnalModal()" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>
+                    <button id="btn-isi-jurnal" onclick="openJurnalModal()" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
@@ -946,6 +946,10 @@
                 document.getElementById('jurnal-view-tadarus').innerText = targetJurnal?.tadarus || '-';
                 document.getElementById('jurnal-view-murojaah').innerText = targetJurnal?.murojaah || '-';
                 document.getElementById('jurnal-view-materi').innerText = targetJurnal?.materi || '-';
+                
+                // Sembunyikan tombol Isi Jurnal jika yang login adalah Admin
+                const btnIsiJurnal = document.getElementById('btn-isi-jurnal');
+                if(btnIsiJurnal) btnIsiJurnal.style.display = currentUserRole === 'admin' ? 'none' : 'block';
             } else {
                 infoPengajar.classList.add('hidden');
                 jurnalSect.classList.add('hidden');
