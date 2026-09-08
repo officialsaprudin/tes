@@ -1293,6 +1293,7 @@
 
                     onSnapshot(collection(db, "users"), (snap) => {
                         pengajarMap = {};
+                        let foundAdminLembaga = null;
                         snap.forEach((d) => {
                             const data = d.data();
                             if(data.kelas && data.nama) {
@@ -1302,8 +1303,11 @@
                                     pengajarMap[data.kelas] = data.nama;
                                 }
                             }
-                            if(d.id === currentUserId && data.role === 'admin') currentLembagaName = data.lembaga || 'Ringkasan Hari Ini';
+                            if(data.role === 'admin' && data.lembaga) {
+                                foundAdminLembaga = data.lembaga;
+                            }
                         });
+                        if (foundAdminLembaga) currentLembagaName = foundAdminLembaga;
                         renderAll();
                     });
 
