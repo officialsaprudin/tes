@@ -25,7 +25,7 @@
                 <!-- Logo -->
                 <div class="flex items-center">
                     <i class="fa-solid fa-book-quran text-2xl mr-2"></i>
-                    <span class="font-bold text-xl tracking-wider">NGAJI<span class="text-indigo-300">APP</span></span>
+                    <span class="font-bold text-xl tracking-wider">TPQ<span class="text-indigo-300">Salaamah Bisyafa'atil Qur'an</span></span>
                 </div>
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-4 items-center">
@@ -107,6 +107,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 space-y-3 md:space-y-0">
                 <div class="flex items-center">
                     <h2 id="dash-title" class="text-2xl font-bold text-gray-800">Nama Lembaga</h2>
+                    <!-- Tombol Edit Lembaga, default sembunyi -->
                     <button id="btn-edit-lembaga" onclick="openLembagaModal()" class="ml-3 bg-gray-200 text-gray-600 px-2 py-1 rounded text-xs font-bold hover:bg-gray-300 hidden"><i class="fa-solid fa-pen"></i> Edit</button>
                 </div>
                 <div class="flex space-x-2">
@@ -541,10 +542,17 @@
             const btnTambah = document.getElementById('btn-tambah-santri');
             if(btnTambah) btnTambah.style.display = currentUserRole === 'admin' ? 'none' : 'block';
 
-            // Dashboard Title & Edit Button
+            // Dashboard Title & Fix Hak Akses Button Edit Lembaga
             document.getElementById('dash-title').innerText = currentLembagaName;
             const btnEditLembaga = document.getElementById('btn-edit-lembaga');
-            if(btnEditLembaga) btnEditLembaga.style.display = currentUserRole === 'admin' ? 'inline-block' : 'none';
+            if (btnEditLembaga) {
+                // Gunakan class tailwind 'hidden' murni agar tidak bentrok dengan display CSS
+                if (currentUserRole === 'admin') {
+                    btnEditLembaga.classList.remove('hidden');
+                } else {
+                    btnEditLembaga.classList.add('hidden');
+                }
+            }
 
             // 1. Dashboard (With Dynamic Class Filter)
             const selectedDashClass = document.getElementById('filter-kelas-dashboard').value;
@@ -807,6 +815,7 @@
         };
         window.closeHistory = () => document.getElementById('modal-history').classList.add('hidden');
 
+        // --- LEMBAGA CRUD (ADMIN) ---
         window.openLembagaModal = () => {
             if (currentUserRole !== 'admin') return;
             document.getElementById('form-edit-lembaga').value = currentLembagaName;
@@ -836,11 +845,13 @@
             }
         });
 
+        // --- JURNAL KELAS HARIAN CRUD ---
         window.openJurnalModal = (kelasSpesifik) => {
             if(currentUserRole === 'admin') return; // Admin Read Only
             const kelas = kelasSpesifik || document.getElementById('filter-kelas-rekap').value;
             if (kelas === "Semua") { alert("Pilih satu kelas spesifik terlebih dahulu!"); return; }
             
+            // Set default date di form jurnal jika kosong, atau pakai tanggal hari ini
             if(!document.getElementById('form-jurnal-tanggal').value) {
                 document.getElementById('form-jurnal-tanggal').valueAsDate = new Date();
             }
@@ -863,6 +874,7 @@
         };
         window.closeJurnalModal = () => document.getElementById('modal-jurnal').classList.add('hidden');
 
+        // Listener jika tanggal di modal diganti, otomatis muat data jurnal hari itu
         document.getElementById('form-jurnal-tanggal').addEventListener('change', () => {
             const kelas = document.getElementById('form-jurnal-kelas').value;
             window.openJurnalModal(kelas); 
@@ -897,6 +909,8 @@
             }
         });
 
+        // --- REKAP & JURNAL RENDER (DATE RANGE) ---
+        // Setup Date Range Default (1 Minggu Terakhir)
         let hariIni = new Date();
         let semingguLalu = new Date(); semingguLalu.setDate(hariIni.getDate() - 6);
         document.getElementById('filter-tanggal-mulai').valueAsDate = semingguLalu;
@@ -922,6 +936,7 @@
                 let btnIsiJurnal = currentUserRole === 'admin' ? '' : `<button onclick="openJurnalModal('${kls}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition whitespace-nowrap">Isi/Edit Jurnal</button>`;
                 
                 let jurnalHTML = '';
+                // Cari Jurnal dalam range tanggal, urutkan dari terbaru
                 let jurnalKelasIni = jurnalStore.filter(j => j.kelas === kls && j.tanggal >= tglMulai && j.tanggal <= tglAkhir).sort((a,b) => b.tanggal.localeCompare(a.tanggal));
                 
                 if (jurnalKelasIni.length > 0) {
@@ -948,9 +963,13 @@
                 }
 
                 let tabelTbody = '';
+                let summaryTbody = '';
+                let summaryData = [];
                 let adaDataSantri = false;
 
                 dataStore.filter(s => s.kelas === kls).forEach(s => {
+                    let h = 0, i = 0, sk = 0, a = 0;
+                    // Filter riwayat berdasarkan range tanggal
                     let riwayatDalamRange = (s.riwayat || []).filter(r => {
                         const tglRiwayat = r.timestamp.split('T')[0]; 
                         return tglRiwayat >= tglMulai && tglRiwayat <= tglAkhir;
@@ -959,6 +978,11 @@
                     if(riwayatDalamRange.length > 0) {
                         adaDataSantri = true;
                         riwayatDalamRange.forEach(adaData => {
+                            if(adaData.kehadiran === 'Hadir') h++;
+                            else if(adaData.kehadiran === 'Izin') i++;
+                            else if(adaData.kehadiran === 'Sakit') sk++;
+                            else if(adaData.kehadiran === 'Alpa') a++;
+
                             let dtRaw = new Date(adaData.timestamp);
                             let tglCetak = `${String(dtRaw.getDate()).padStart(2,'0')}/${String(dtRaw.getMonth()+1).padStart(2,'0')}`;
                             let badgeHafalan = getKetBadge(adaData.nilaiHafalan || adaData.keterangan);
@@ -979,6 +1003,7 @@
                                 </tr>
                             `;
                         });
+                        summaryData.push({nama: s.nama, h, sk, i, a});
                     }
                 });
 
@@ -986,13 +1011,50 @@
                      tabelTbody = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data ngaji di rentang tanggal ini</td></tr>';
                 }
 
+                if(summaryData.length > 0) {
+                    summaryData.forEach(sum => {
+                        summaryTbody += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3 font-bold text-gray-800">${sum.nama}</td>
+                                <td class="p-3 text-center text-green-600 font-bold">${sum.h}</td>
+                                <td class="p-3 text-center text-orange-500 font-bold">${sum.sk}</td>
+                                <td class="p-3 text-center text-yellow-600 font-bold">${sum.i}</td>
+                                <td class="p-3 text-center text-red-600 font-bold">${sum.a}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                // Cuma tampilkan kelas yang ada jurnal ATAU ada data ngaji
                 if (jurnalKelasIni.length > 0 || adaDataSantri) {
                     container.innerHTML += `
                         <div class="mb-10">
                             <h3 class="text-xl font-bold text-gray-800 mb-1 border-b-2 border-indigo-200 pb-2">${kls}</h3>
                             <p class="text-sm text-indigo-600 font-bold mb-4"><i class="fa-solid fa-user-tie mr-1"></i> Pengajar: ${pengajar}</p>
                             ${jurnalHTML}
+                            
+                            ${summaryData.length > 0 ? `
+                            <div class="bg-white rounded-xl shadow overflow-hidden p-4 mb-4">
+                                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2 text-sm"><i class="fa-solid fa-calculator text-indigo-500 mr-2"></i>Rekapitulasi Absensi</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse text-sm">
+                                        <thead>
+                                            <tr class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                                                <th class="p-3 whitespace-nowrap">Nama Santri</th>
+                                                <th class="p-3 text-center whitespace-nowrap">Hadir (H)</th>
+                                                <th class="p-3 text-center whitespace-nowrap">Sakit (S)</th>
+                                                <th class="p-3 text-center whitespace-nowrap">Izin (I)</th>
+                                                <th class="p-3 text-center whitespace-nowrap">Alpa (A)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${summaryTbody}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            ` : ''}
+
                             <div class="bg-white rounded-xl shadow overflow-hidden p-4">
+                                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2 text-sm"><i class="fa-solid fa-list text-indigo-500 mr-2"></i>Rincian Riwayat Harian</h4>
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left border-collapse text-sm">
                                         <thead>
@@ -1026,6 +1088,10 @@
             setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
         };
 
+        // ==========================================
+        // 6. PDF EXPORT (SMART FIX & CENTERED TITLE)
+        // ==========================================
+        
         function handlePDFOutput(doc, filename) {
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             if (isMobile) doc.save(filename);
@@ -1105,22 +1171,53 @@
                 }
 
                 let tableData = [];
+                let summaryTableData = [];
+                
                 dataStore.filter(s => s.kelas === kls).forEach(s => {
+                    let h = 0, i = 0, sk = 0, a = 0;
                     let riwayatDalamRange = (s.riwayat || []).filter(r => {
                         const tglRiwayat = r.timestamp.split('T')[0]; 
                         return tglRiwayat >= tglMulai && tglRiwayat <= tglAkhir;
                     });
 
                     riwayatDalamRange.forEach(r => {
+                        if(r.kehadiran === 'Hadir') h++;
+                        else if(r.kehadiran === 'Izin') i++;
+                        else if(r.kehadiran === 'Sakit') sk++;
+                        else if(r.kehadiran === 'Alpa') a++;
+
                         let dt = new Date(r.timestamp);
                         let tglStr = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
                         let ketHaf = r.nilaiHafalan || r.keterangan || '-';
                         let ketJld = r.nilaiJilid || r.keterangan || '-';
                         tableData.push([tglStr, s.nama, r.kehadiran, r.jilid, r.surah, `H: ${ketHaf}\nJ: ${ketJld}`, r.catatan || '-']);
                     });
+
+                    if(riwayatDalamRange.length > 0) {
+                        summaryTableData.push([s.nama, h, sk, i, a]);
+                    }
                 });
 
+                if (summaryTableData.length > 0) {
+                    doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                    doc.text(`Rekapitulasi Absensi:`, 14, startY);
+                    startY += 4;
+                    doc.autoTable({ 
+                        startY: startY, 
+                        head: [['Nama Santri', 'Hadir (H)', 'Sakit (S)', 'Izin (I)', 'Alpa (A)']], 
+                        body: summaryTableData, 
+                        theme: 'grid', 
+                        headStyles: { fillColor: [79, 70, 229] }, 
+                        styles: { cellPadding: 2, fontSize: 8, halign: 'center' },
+                        columnStyles: { 0: { halign: 'left' } }
+                    });
+                    startY = doc.lastAutoTable.finalY + 8;
+                }
+
                 if (tableData.length > 0) {
+                    doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                    doc.text(`Rincian Riwayat Harian:`, 14, startY);
+                    startY += 4;
                     doc.autoTable({ 
                         startY: startY, 
                         head: [['Tgl', 'Nama', 'Hadir', 'Jilid', 'Hafalan', 'Nilai', 'Catatan']], 
@@ -1140,6 +1237,9 @@
             handlePDFOutput(doc, `Rekap_${tglMulai}_sd_${tglAkhir}.pdf`);
         };
 
+        // ==========================================
+        // 7. INITIALIZATION & AUTH LOGIC
+        // ==========================================
         function initApp() {
             renderAll();
             const lastView = localStorage.getItem('activeView') || 'dashboard';
