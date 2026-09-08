@@ -100,7 +100,7 @@
 
                     <div class="mb-6">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                        <input type="password" id="login-password" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="123456" required>
+                        <input type="password" id="login-password" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     </div>
 
                     <button type="submit" id="auth-btn" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Masuk</button>
@@ -168,6 +168,7 @@
                                 <th class="p-4 border-b">Hafalan</th>
                                 <th class="p-4 border-b">Jilid</th>
                                 <th class="p-4 border-b">Nilai (Haf/Jld)</th>
+                                <th class="p-4 border-b">Catatan</th>
                                 <th class="p-4 border-b text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -201,8 +202,8 @@
                 </div>
             </div>
 
-            <!-- CONTAINER REKAP DINAMIS PER KELAS -->
-            <div id="rekap-container" class="space-y-8"></div>
+            <!-- Kontainer Utama Rekap Harian (Berisi Jurnal + Tabel Dinamis) -->
+            <div id="rekap-container"></div>
         </div>
 
     </main>
@@ -214,7 +215,7 @@
                 <h3 id="modal-title" class="font-bold text-lg">Update Progres</h3>
                 <button onclick="closeModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <form id="santri-form" class="p-6">
+            <form id="santri-form" class="p-6 overflow-y-auto max-h-[80vh]">
                 <input type="hidden" id="form-id">
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-1">Nama Santri</label>
@@ -264,16 +265,18 @@
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Nilai Jilid/Ngaji</label>
-                        <select id="form-nilai-jilid" class="w-full px-3 py-2 border rounded-lg bg-white">
-                            <option value="Lancar">Lancar / Lanjut</option>
-                            <option value="Kurang Lancar">Kurang Lancar</option>
-                            <option value="Mengulang">Mengulang</option>
-                            <option value="-">-</option>
-                        </select>
-                    </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nilai Jilid/Ngaji</label>
+                    <select id="form-nilai-jilid" class="w-full px-3 py-2 border rounded-lg bg-white">
+                        <option value="Lancar">Lancar / Lanjut</option>
+                        <option value="Kurang Lancar">Kurang Lancar</option>
+                        <option value="Mengulang">Mengulang</option>
+                        <option value="-">-</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
+                    <textarea id="form-catatan" rows="2" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Cth: Tajwid kurang di huruf Dlod"></textarea>
                 </div>
                 <div class="flex justify-end space-x-2">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Batal</button>
@@ -285,7 +288,7 @@
 
     <!-- Modal Riwayat -->
     <div id="modal-history" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
             <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white rounded-t-xl">
                 <h3 class="font-bold text-lg">Riwayat Ngaji: <span id="hist-nama"></span></h3>
                 <button onclick="closeHistory()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -299,6 +302,7 @@
                             <th class="p-2 border-b">Hafalan</th>
                             <th class="p-2 border-b">Jilid</th>
                             <th class="p-2 border-b">Nilai</th>
+                            <th class="p-2 border-b w-1/4">Catatan</th>
                         </tr>
                     </thead>
                     <tbody id="hist-tbody"></tbody>
@@ -335,8 +339,8 @@
                 <button onclick="closeJurnalModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <form id="jurnal-form" class="p-6">
-                <input type="hidden" id="form-jurnal-kelas-hidden">
-                <p class="text-xs text-gray-500 mb-4 bg-indigo-50 p-2 rounded">Jurnal ini akan tersimpan untuk kelas dan tanggal yang dipilih.</p>
+                <input type="hidden" id="form-jurnal-kelas">
+                <p class="text-xs text-gray-500 mb-4 bg-indigo-50 p-2 rounded">Jurnal ini akan tersimpan untuk kelas dan tanggal yang sedang difilter di halaman Rekap.</p>
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-1">Tadarus Surah</label>
                     <input type="text" id="form-jurnal-tadarus" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Cth: Al-Baqarah (1-10)">
@@ -401,15 +405,14 @@
         if (is_preview) {
             document.getElementById('demo-hint').classList.remove('hidden');
             
-            // Mock Data Generator for Preview mode (Includes Fatimah with Alpa to show Strict Stars)
+            // Mock Data Generator for Preview mode
             dataStore = [
-                { id: "1", nama: "Fatimah Azzahra", kelas: "Kelas Madinah", kehadiran: "Hadir", jilid: "Jilid 4", halaman: "15", surah: "An-Naba", ayat: "30", nilaiHafalan: "Lancar", nilaiJilid: "Lancar", riwayat: [
-                    {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 4", halaman: "15", surah: "An-Naba", ayat: "30", nilaiHafalan: "Lancar", nilaiJilid: "Lancar"},
-                    // Simulasi absen kemarin (H-1) untuk mengetes bintang strict hangus
-                    {timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), kehadiran: "Alpa", jilid: "-", halaman: "-", surah: "-", ayat: "-", nilaiHafalan: "-", nilaiJilid: "-"}
+                { id: "1", nama: "Fatimah Azzahra", kelas: "Kelas Madinah", kehadiran: "Hadir", jilid: "Jilid 4", halaman: "15", surah: "An-Naba", ayat: "30", nilaiHafalan: "Lancar", nilaiJilid: "Lancar", catatan: "Tajwid makin mantap", riwayat: [
+                    {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 4", halaman: "15", surah: "An-Naba", ayat: "30", nilaiHafalan: "Lancar", nilaiJilid: "Lancar", catatan: "Tajwid makin mantap"},
+                    {timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), kehadiran: "Alpa", jilid: "-", halaman: "-", surah: "-", ayat: "-", nilaiHafalan: "-", nilaiJilid: "-", catatan: "-"}
                 ]},
-                { id: "2", nama: "Ahmad Yasin", kelas: "Kelas Madinah", kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", riwayat: [
-                    {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar"}
+                { id: "2", nama: "Ahmad Yasin", kelas: "Kelas Madinah", kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", catatan: "Sering ketukar huruf Sin dan Syin", riwayat: [
+                    {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", catatan: "Sering ketukar huruf Sin dan Syin"}
                 ]}
             ];
             pengajarMap["Kelas Madinah"] = "Ust. Saprudin S.Ag";
@@ -451,6 +454,11 @@
                 document.getElementById('reg-lembaga').required = false;
             }
         };
+
+        if (!is_preview) {
+            const demoHint = document.getElementById('demo-hint');
+            if (demoHint) demoHint.classList.add('hidden');
+        }
 
         window.toggleMobileMenu = () => {
             document.getElementById('mobile-menu').classList.toggle('hidden');
@@ -629,6 +637,7 @@
                             <div class="mb-1 flex items-center space-x-1"><span class="text-[10px] text-gray-400 w-6">Haf:</span> ${badgeHafalan}</div>
                             <div class="flex items-center space-x-1"><span class="text-[10px] text-gray-400 w-6">Jld:</span> ${badgeJilid}</div>
                         </td>
+                        <td class="p-4 text-xs text-gray-600 italic">${s.catatan || '-'}</td>
                         <td class="p-4 text-center">
                             <div class="flex justify-center space-x-3 text-lg">
                                 ${actionButtons}
@@ -662,6 +671,10 @@
 
         document.getElementById('filter-kelas-tabel').addEventListener('change', renderAll);
         
+        // ==========================================
+        // 5. MODALS & CRUD
+        // ==========================================
+        
         // --- SANTRI CRUD ---
         window.openModal = (mode) => {
             if(currentUserRole === 'admin') return;
@@ -678,6 +691,7 @@
             document.getElementById('form-ayat').value = "-";
             document.getElementById('form-nilai-hafalan').value = "Lancar";
             document.getElementById('form-nilai-jilid').value = "Lancar";
+            document.getElementById('form-catatan').value = "";
             document.getElementById('modal-form').classList.remove('hidden');
         };
 
@@ -702,6 +716,7 @@
                 document.getElementById('form-ayat').value = s.ayat;
                 document.getElementById('form-nilai-hafalan').value = s.nilaiHafalan || s.keterangan || 'Lancar';
                 document.getElementById('form-nilai-jilid').value = s.nilaiJilid || s.keterangan || 'Lancar';
+                document.getElementById('form-catatan').value = s.catatan || '';
                 document.getElementById('modal-title').innerText = 'Update Progres Santri';
                 document.getElementById('modal-form').classList.remove('hidden');
             }
@@ -720,7 +735,7 @@
                 kehadiran: document.getElementById('form-kehadiran').value, jilid: document.getElementById('form-jilid').value,
                 halaman: document.getElementById('form-halaman').value, surah: document.getElementById('form-surah').value,
                 ayat: document.getElementById('form-ayat').value, nilaiHafalan: document.getElementById('form-nilai-hafalan').value,
-                nilaiJilid: document.getElementById('form-nilai-jilid').value, timestamp: currentTimestamp 
+                nilaiJilid: document.getElementById('form-nilai-jilid').value, catatan: document.getElementById('form-catatan').value, timestamp: currentTimestamp 
             };
 
             if (is_preview) {
@@ -800,11 +815,12 @@
                                 <div class="mb-1 flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">H:</span> ${badgeHafalan}</div>
                                 <div class="flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">J:</span> ${badgeJilid}</div>
                             </td>
+                            <td class="p-2 text-xs text-gray-600 italic">${r.catatan || '-'}</td>
                         </tr>
                     `;
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">Belum ada riwayat</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Belum ada riwayat</td></tr>';
             }
             document.getElementById('modal-history').classList.remove('hidden');
         };
@@ -840,24 +856,20 @@
         });
 
         // --- JURNAL KELAS HARIAN CRUD ---
-        window.openJurnalModal = (kelasTujuan) => {
+        window.openJurnalModal = (kelasSpesifik) => {
             const tgl = document.getElementById('filter-tanggal').value;
-            const kelas = kelasTujuan || document.getElementById('filter-kelas-rekap').value;
-            
-            if (kelas === "Semua") { alert("Terjadi kesalahan, kelas tidak terdeteksi!"); return; }
-            
-            document.getElementById('form-jurnal-kelas-hidden').value = kelas;
-            
-            const jId = `${kelas}_${tgl}`;
+            const jId = `${kelasSpesifik}_${tgl}`;
             const targetJurnal = jurnalStore.find(j => j.id === jId);
             
+            document.getElementById('form-jurnal-kelas').value = kelasSpesifik;
+
             if(targetJurnal) {
                 document.getElementById('form-jurnal-tadarus').value = targetJurnal.tadarus || '';
                 document.getElementById('form-jurnal-murojaah').value = targetJurnal.murojaah || '';
                 document.getElementById('form-jurnal-materi').value = targetJurnal.materi || '';
             } else {
                 document.getElementById('jurnal-form').reset();
-                document.getElementById('form-jurnal-kelas-hidden').value = kelas; // re-assign sesudah reset form
+                document.getElementById('form-jurnal-kelas').value = kelasSpesifik;
             }
             document.getElementById('modal-jurnal').classList.remove('hidden');
         };
@@ -866,7 +878,7 @@
         document.getElementById('jurnal-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const tgl = document.getElementById('filter-tanggal').value;
-            const kelas = document.getElementById('form-jurnal-kelas-hidden').value;
+            const kelas = document.getElementById('form-jurnal-kelas').value;
             const jId = `${kelas}_${tgl}`;
             
             const newData = {
@@ -898,47 +910,71 @@
         function renderRekap() {
             const tglFilter = document.getElementById('filter-tanggal').value;
             const kelasFilter = document.getElementById('filter-kelas-rekap').value;
-            const container = document.getElementById('rekap-container');
+            const rekapContainer = document.getElementById('rekap-container');
             const infoPengajar = document.getElementById('info-pengajar-rekap');
-            container.innerHTML = '';
+            rekapContainer.innerHTML = '';
             
+            let classesToRender = [];
+
             if (kelasFilter !== "Semua") {
                 const pengajar = pengajarMap[kelasFilter] || "Belum diatur";
                 infoPengajar.innerHTML = `<i class="fa-solid fa-chalkboard-user mr-1"></i> Difilter untuk: ${pengajar}`;
                 infoPengajar.classList.remove('hidden');
+                classesToRender.push(kelasFilter);
             } else {
                 infoPengajar.classList.add('hidden');
-            }
-            
-            // Siapkan array kelas mana saja yang mau dirender blok-nya
-            let targetClasses = [];
-            if (kelasFilter === "Semua") {
-                Array.from(classesSet).sort().forEach(cls => {
-                    if (currentUserRole === 'admin' || currentUserClasses.includes(cls)) targetClasses.push(cls);
-                });
-            } else {
-                targetClasses.push(kelasFilter);
+                let userClasses = Array.from(classesSet).sort();
+                if (currentUserRole === 'ustadz') {
+                    userClasses = userClasses.filter(c => currentUserClasses.includes(c));
+                }
+                classesToRender = userClasses;
             }
 
-            if(targetClasses.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data kelas yang tersedia.</p>';
-                return;
-            }
-
-            // Render UI per blok Kelas
-            targetClasses.forEach(cls => {
-                const pengajarCls = pengajarMap[cls] || '-';
-                const targetJurnal = jurnalStore.find(j => j.id === `${cls}_${tglFilter}`);
-                const tadarusVal = targetJurnal?.tadarus || '-';
-                const murojaahVal = targetJurnal?.murojaah || '-';
-                const materiVal = targetJurnal?.materi || '-';
-
-                const muridDiKelas = dataStore.filter(s => s.kelas === cls);
+            // Loop untuk setiap kelas yang akan dirender
+            classesToRender.forEach(cls => {
+                // Filter santri yang punya data hari ini di kelas ini
+                let santriHariIni = dataStore.filter(s => s.kelas === cls && s.riwayat && s.riwayat.some(r => r.timestamp.startsWith(tglFilter)));
                 
+                // Lewati render blok jika tidak ada data santri sama sekali di hari tersebut untuk kelas ini
+                if(santriHariIni.length === 0) return;
+
+                const targetJurnal = jurnalStore.find(j => j.id === `${cls}_${tglFilter}`);
+                
+                let btnJurnalHtml = '';
+                if(currentUserRole !== 'admin') {
+                    btnJurnalHtml = `<button onclick="openJurnalModal('${cls}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>`;
+                }
+
+                // Bangun Kotak Jurnal
+                let jurnalHtml = `
+                    <div class="bg-indigo-50 p-4 rounded-t-xl border-t border-l border-r border-indigo-100 mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-indigo-800"><i class="fa-solid fa-book-journal-whills mr-2"></i> Jurnal Harian: ${cls}</h3>
+                            ${btnJurnalHtml}
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
+                                <p class="text-xs text-indigo-500 font-bold mb-1">Tadarus Surah</p>
+                                <p class="text-sm font-medium text-gray-800">${targetJurnal?.tadarus || '-'}</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
+                                <p class="text-xs text-indigo-500 font-bold mb-1">Murojaah (Surah & Ayat)</p>
+                                <p class="text-sm font-medium text-gray-800">${targetJurnal?.murojaah || '-'}</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
+                                <p class="text-xs text-indigo-500 font-bold mb-1">Materi Pembelajaran</p>
+                                <p class="text-sm font-medium text-gray-800">${targetJurnal?.materi || '-'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Bangun Tabel Baris
                 let rowsHtml = '';
-                muridDiKelas.forEach(s => {
-                    let adaData = (s.riwayat || []).find(r => r.timestamp.startsWith(tglFilter));
+                santriHariIni.forEach(s => {
+                    let adaData = s.riwayat.find(r => r.timestamp.startsWith(tglFilter));
                     if(adaData) {
+                        const namaWaliKelas = pengajarMap[s.kelas] || '-';
                         let badgeHafalan = getKetBadge(adaData.nilaiHafalan || adaData.keterangan);
                         let badgeJilid = getKetBadge(adaData.nilaiJilid || adaData.keterangan);
 
@@ -947,7 +983,7 @@
                                 <td class="p-3 font-bold text-gray-800">${s.nama}</td>
                                 <td class="p-3">
                                     <div class="font-medium text-gray-800">${s.kelas || '-'}</div>
-                                    <div class="text-xs text-indigo-600 font-bold mt-0.5"><i class="fa-solid fa-user-tie mr-1"></i> ${pengajarCls}</div>
+                                    <div class="text-xs text-indigo-600 font-bold mt-0.5"><i class="fa-solid fa-user-tie mr-1"></i> ${namaWaliKelas}</div>
                                 </td>
                                 <td class="p-3">${getStatusBadge(adaData.kehadiran)}</td>
                                 <td class="p-3">${adaData.surah} <br><span class="text-gray-500 text-[10px]">(Ayat ${adaData.ayat})</span></td>
@@ -956,53 +992,16 @@
                                     <div class="mb-1 flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">H:</span> ${badgeHafalan}</div>
                                     <div class="flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">J:</span> ${badgeJilid}</div>
                                 </td>
+                                <td class="p-3 text-xs text-gray-600 italic">${adaData.catatan || '-'}</td>
                             </tr>
                         `;
                     }
                 });
 
-                // Auto-Hide kelas yang sama sekali nggak ada aktifitas di hari itu pas lagi mode "Semua"
-                if (rowsHtml === '' && !targetJurnal && kelasFilter === "Semua") return; 
-                
-                if (rowsHtml === '') {
-                    rowsHtml = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Tidak ada data ngaji di tanggal ini</td></tr>';
-                }
-
-                // Sembunyikan tombol jurnal kalau rolenya admin
-                const btnJurnal = currentUserRole === 'admin' ? '' : `<button onclick="openJurnalModal('${cls}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>`;
-
-                container.innerHTML += `
-                    <div class="mb-8 border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                        <!-- Class Header -->
-                        <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
-                            <h3 class="font-bold text-lg text-gray-800">${cls}</h3>
-                            <span class="text-sm text-indigo-600 font-bold"><i class="fa-solid fa-chalkboard-user mr-1"></i> ${pengajarCls}</span>
-                        </div>
-
-                        <!-- Jurnal Section -->
-                        <div class="bg-indigo-50/50 p-4 border-b border-indigo-50">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-bold text-indigo-800 text-sm"><i class="fa-solid fa-book-journal-whills mr-2"></i> Jurnal Kelas</h4>
-                                ${btnJurnal}
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
-                                    <p class="text-xs text-indigo-500 font-bold mb-1">Tadarus Surah</p>
-                                    <p class="text-sm font-medium text-gray-800">${tadarusVal}</p>
-                                </div>
-                                <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
-                                    <p class="text-xs text-indigo-500 font-bold mb-1">Murojaah (Surah & Ayat)</p>
-                                    <p class="text-sm font-medium text-gray-800">${murojaahVal}</p>
-                                </div>
-                                <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
-                                    <p class="text-xs text-indigo-500 font-bold mb-1">Materi Pembelajaran</p>
-                                    <p class="text-sm font-medium text-gray-800">${materiVal}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Table Section -->
-                        <div class="overflow-x-auto p-4">
+                // Bangun Tabel Utuh
+                let tableHtml = `
+                    <div class="bg-white rounded-b-xl shadow overflow-hidden mb-6 border border-gray-100">
+                        <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm min-w-max">
                                 <thead>
                                     <tr class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
@@ -1012,6 +1011,7 @@
                                         <th class="p-3">Hafalan</th>
                                         <th class="p-3">Jilid</th>
                                         <th class="p-3">Nilai</th>
+                                        <th class="p-3 w-1/5">Catatan</th>
                                     </tr>
                                 </thead>
                                 <tbody>${rowsHtml}</tbody>
@@ -1019,10 +1019,13 @@
                         </div>
                     </div>
                 `;
+
+                // Gabungkan dan tempel ke container
+                rekapContainer.innerHTML += jurnalHtml + tableHtml;
             });
-            
-            if(container.innerHTML === '') {
-                container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data di tanggal/kelas ini</p>';
+
+            if(rekapContainer.innerHTML === '') {
+                 rekapContainer.innerHTML = '<div class="bg-white p-8 rounded-xl shadow text-center text-gray-500">Tidak ada data ngaji di tanggal ini.</div>';
             }
         }
 
@@ -1063,10 +1066,11 @@
                 const dt = new Date(r.timestamp);
                 let ketHaf = r.nilaiHafalan || r.keterangan || '-';
                 let ketJld = r.nilaiJilid || r.keterangan || '-';
-                return [`${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`, r.kehadiran, r.jilid + ' - ' + r.halaman, r.surah + ' (' + r.ayat + ')', `Haf: ${ketHaf}\nJld: ${ketJld}`];
+                let cttn = r.catatan || '-';
+                return [`${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`, r.kehadiran, r.jilid + ' - ' + r.halaman, r.surah + ' (' + r.ayat + ')', `Haf: ${ketHaf}\nJld: ${ketJld}`, cttn];
             });
 
-            doc.autoTable({ startY: 40, head: [['Tanggal', 'Kehadiran', 'Jilid/Hal', 'Hafalan (Ayat)', 'Penilaian']], body: tableData, theme: 'grid', headStyles: { fillColor: [79, 70, 229] } });
+            doc.autoTable({ startY: 40, head: [['Tanggal', 'Kehadiran', 'Jilid/Hal', 'Hafalan (Ayat)', 'Penilaian', 'Catatan']], body: tableData, theme: 'grid', headStyles: { fillColor: [79, 70, 229] } });
             
             handlePDFOutput(doc, `Rapor_${s.nama.replace(/\s+/g, '_')}.pdf`);
         };
@@ -1118,11 +1122,12 @@
                 let kolomKelasGabungan = `${s.kelas || '-'}\n(${namaWaliKelas})`;
                 let ketHaf = r ? (r.nilaiHafalan || r.keterangan || '-') : '-';
                 let ketJld = r ? (r.nilaiJilid || r.keterangan || '-') : '-';
+                let cttn = r ? (r.catatan || '-') : '-';
                 
-                if(r) tableData.push([s.nama, kolomKelasGabungan, r.kehadiran, r.jilid, r.surah, `H: ${ketHaf}\nJ: ${ketJld}`]);
+                if(r) tableData.push([s.nama, kolomKelasGabungan, r.kehadiran, r.jilid, r.surah, `H: ${ketHaf}\nJ: ${ketJld}`, cttn]);
             });
 
-            doc.autoTable({ startY: startY, head: [['Nama', 'Kelas / Ustadz', 'Kehadiran', 'Jilid', 'Hafalan', 'Nilai']], body: tableData, theme: 'grid', headStyles: { fillColor: [220, 38, 38] }, styles: { cellPadding: 3, fontSize: 9 } });
+            doc.autoTable({ startY: startY, head: [['Nama', 'Kelas/Ustadz', 'Kehadiran', 'Jilid', 'Hafalan', 'Nilai', 'Catatan']], body: tableData, theme: 'grid', headStyles: { fillColor: [220, 38, 38] }, styles: { cellPadding: 2, fontSize: 8 } });
             
             handlePDFOutput(doc, `Rekap_${tgl}_${kelasFilter.replace(/\s+/g, '')}.pdf`);
         };
