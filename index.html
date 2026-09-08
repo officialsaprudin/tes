@@ -1082,47 +1082,61 @@
         window.exportGlobalPDF = () => {
             if(!window.jspdf) return;
             const doc = new window.jspdf.jsPDF();
-            const tgl = document.getElementById('filter-tanggal').value;
+            const tglMulai = document.getElementById('filter-tanggal-mulai').value;
+            const tglAkhir = document.getElementById('filter-tanggal-akhir').value;
             const kelasFilter = document.getElementById('filter-kelas-rekap').value;
             
-            doc.setFontSize(16); doc.text(`Rekapitulasi Harian: ${tgl}`, 14, 22); doc.setFontSize(11);
-            let startY = 30;
+            doc.setFontSize(14); doc.text(`Laporan Progres Santri`, 14, 15);
+            doc.setFontSize(10); doc.text(`Periode: ${tglMulai} s/d ${tglAkhir}`, 14, 21);
+            let startY = 28;
             
             if (kelasFilter !== "Semua") {
                 const pengajar = pengajarMap[kelasFilter] || "Belum diatur";
-                doc.text(`Kelas: ${kelasFilter}`, 14, 30); doc.text(`Pengajar: ${pengajar}`, 14, 36); 
-                
-                const targetJurnal = jurnalStore.find(j => j.id === `${kelasFilter}_${tgl}`);
-                if(targetJurnal) {
-                    doc.setFontSize(9);
-                    doc.text(`Tadarus: ${targetJurnal.tadarus || '-'} | Murojaah: ${targetJurnal.murojaah || '-'}`, 14, 44);
-                    doc.text(`Materi: ${targetJurnal.materi || '-'}`, 14, 50);
-                    startY = 56;
-                } else {
-                    startY = 44;
-                }
+                doc.text(`Kelas: ${kelasFilter} | Pengajar: ${pengajar}`, 14, 27);
+                startY = 32;
             } else {
-                doc.text(`Filter: Semua Kelas`, 14, 30); startY = 36;
+                doc.text(`Filter: Semua Kelas`, 14, 27); startY = 32;
             }
             
-            let tableData = [];
+            const startObj = new Date(tglMulai); startObj.setHours(0,0,0,0);
+            const endObj = new Date(tglAkhir); endObj.setHours(23,59,59,999);
+
+            let rawData = [];
             dataStore.filter(s => {
                 if(currentUserRole === 'ustadz' && !currentUserClasses.includes(s.kelas)) return false;
                 return kelasFilter === "Semua" || s.kelas === kelasFilter;
             }).forEach(s => {
-                let r = (s.riwayat || []).find(x => x.timestamp.startsWith(tgl));
-                let namaWaliKelas = pengajarMap[s.kelas] || '-';
-                let kolomKelasGabungan = `${s.kelas || '-'}\n(${namaWaliKelas})`;
-                let ketHaf = r ? (r.nilaiHafalan || r.keterangan || '-') : '-';
-                let ketJld = r ? (r.nilaiJilid || r.keterangan || '-') : '-';
-                let cttn = r ? (r.catatan || '-') : '-';
-                
-                if(r) tableData.push([s.nama, kolomKelasGabungan, r.kehadiran, r.jilid, r.surah, `H: ${ketHaf}\nJ: ${ketJld}`, cttn]);
+                if(s.riwayat) {
+                    s.riwayat.forEach(r => {
+                        let rDate = new Date(r.timestamp);
+                        if(rDate >= startObj && rDate <= endObj) {
+                            rawData.push({ santri: s, record: r, date: rDate });
+                        }
+                    });
+                }
             });
 
-            doc.autoTable({ startY: startY, head: [['Nama', 'Kelas/Ustadz', 'Kehadiran', 'Jilid', 'Hafalan', 'Nilai', 'Catatan']], body: tableData, theme: 'grid', headStyles: { fillColor: [220, 38, 38] }, styles: { cellPadding: 2, fontSize: 8 } });
+            rawData.sort((a,b) => b.date - a.date); // Urutkan tanggal terbaru di atas
+
+            let tableData = rawData.map(item => {
+                 const fmtDate = `${item.date.getDate().toString().padStart(2,'0')}/${(item.date.getMonth()+1).toString().padStart(2,'0')}`;
+                 let ketHaf = item.record.nilaiHafalan || item.record.keterangan || '-';
+                 let ketJld = item.record.nilaiJilid || item.record.keterangan || '-';
+                 let cttn = item.record.catatan || '-';
+                 let kelasString = (kelasFilter === "Semua") ? `\n(${item.santri.kelas})` : '';
+                 return [fmtDate, item.santri.nama + kelasString, item.record.kehadiran, item.record.jilid, item.record.surah, `H:${ketHaf}\nJ:${ketJld}`, cttn];
+            });
+
+            doc.autoTable({ 
+                startY: startY, 
+                head: [['Tgl', 'Nama', 'Hadir', 'Jilid', 'Hafalan', 'Nilai', 'Catatan']], 
+                body: tableData, 
+                theme: 'grid', 
+                headStyles: { fillColor: [220, 38, 38] }, 
+                styles: { cellPadding: 2, fontSize: 8 } 
+            });
             
-            handlePDFOutput(doc, `Rekap_${tgl}_${kelasFilter.replace(/\s+/g, '')}.pdf`);
+            handlePDFOutput(doc, `Laporan_${tglMulai}_to_${tglAkhir}.pdf`);
         };
 
         // ==========================================
