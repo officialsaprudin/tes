@@ -862,6 +862,10 @@
 
         // --- JURNAL KELAS HARIAN CRUD ---
         window.openJurnalModal = (kelasSpesifik) => {
+            if (currentUserRole === 'admin') {
+                alert("Mode Admin: Anda hanya memiliki akses untuk membaca laporan.");
+                return;
+            }
             document.getElementById('form-jurnal-kelas').value = kelasSpesifik;
             document.getElementById('form-jurnal-tanggal').valueAsDate = new Date(); // Default hari ini
             
@@ -893,6 +897,8 @@
 
         document.getElementById('jurnal-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (currentUserRole === 'admin') return;
+            
             const tgl = document.getElementById('form-jurnal-tanggal').value;
             const kelas = document.getElementById('form-jurnal-kelas').value;
             const jId = `${kelas}_${tgl}`;
@@ -1084,8 +1090,10 @@
             if(currentUserRole === 'ustadz' && !currentUserClasses.includes(s.kelas)) return;
 
             const doc = new window.jspdf.jsPDF();
-            doc.setFontSize(18); doc.text(`Rapor Ngaji: ${s.nama}`, 14, 22);
-            doc.setFontSize(11); doc.text(`Kelas: ${s.kelas || '-'}`, 14, 30);
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            doc.setFontSize(18); doc.text(`Rapor Ngaji: ${s.nama}`, pageWidth / 2, 22, { align: 'center' });
+            doc.setFontSize(11); doc.text(`Kelas: ${s.kelas || '-'}`, pageWidth / 2, 30, { align: 'center' });
             
             const tableData = (s.riwayat || []).map(r => {
                 const dt = new Date(r.timestamp);
@@ -1103,7 +1111,10 @@
         window.exportKelas = (kelas) => {
             if(!window.jspdf) return;
             const doc = new window.jspdf.jsPDF();
-            doc.setFontSize(16); doc.text(`Daftar Santri: ${kelas}`, 14, 22);
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            doc.setFontSize(16); doc.text(`Daftar Santri: ${kelas}`, pageWidth / 2, 22, { align: 'center' });
+            
             const tableData = dataStore.filter(x => x.kelas === kelas).map((m, i) => [i+1, m.nama, m.kehadiran, m.jilid, m.surah]);
             doc.autoTable({ startY: 30, head: [['No', 'Nama Santri', 'Status Terakhir', 'Jilid', 'Hafalan']], body: tableData, theme: 'striped', headStyles: { fillColor: [79, 70, 229] } });
             
@@ -1119,8 +1130,10 @@
             const tglAkhir = document.getElementById('filter-tanggal-akhir').value;
             const kelasFilter = document.getElementById('filter-kelas-rekap').value;
             
-            doc.setFontSize(14); doc.text(`Laporan Progres Santri`, 14, 15);
-            doc.setFontSize(10); doc.text(`Periode: ${tglMulai} s/d ${tglAkhir}`, 14, 21);
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            doc.setFontSize(14); doc.text(`Laporan Progres Santri`, pageWidth / 2, 15, { align: 'center' });
+            doc.setFontSize(10); doc.text(`Periode: ${tglMulai} s/d ${tglAkhir}`, pageWidth / 2, 21, { align: 'center' });
             let startY = 28;
             
             const startObj = new Date(tglMulai); startObj.setHours(0,0,0,0);
@@ -1128,7 +1141,7 @@
 
             if (kelasFilter !== "Semua") {
                 const pengajar = pengajarMap[kelasFilter] || "Belum diatur";
-                doc.text(`Kelas: ${kelasFilter} | Pengajar: ${pengajar}`, 14, 27);
+                doc.text(`Kelas: ${kelasFilter} | Pengajar: ${pengajar}`, pageWidth / 2, 27, { align: 'center' });
                 startY = 32;
                 
                 // Tempelkan ringkasan jurnal di PDF
@@ -1140,7 +1153,7 @@
                 
                 if (jurnalsInRange.length > 0) {
                     doc.setFontSize(9);
-                    doc.text(`Jurnal Terekam (${jurnalsInRange.length} Hari):`, 14, startY);
+                    doc.text(`Jurnal Terekam (${jurnalsInRange.length} Hari):`, 14, startY); // Jurnal tetap rata kiri biar rapi
                     startY += 4;
                     jurnalsInRange.slice(0, 3).forEach(j => { // Tampilkan max 3 jurnal biar PDF ga kepenuhan header
                          doc.text(`- ${j.tanggal}: Tadarus(${j.tadarus||'-'}), Materi(${j.materi||'-'})`, 14, startY);
@@ -1149,7 +1162,7 @@
                     if(jurnalsInRange.length > 3) { doc.text(`  ...dan ${jurnalsInRange.length - 3} jurnal lainnya`, 14, startY); startY += 4; }
                 }
             } else {
-                doc.text(`Filter: Semua Kelas`, 14, 27); startY = 32;
+                doc.text(`Filter: Semua Kelas`, pageWidth / 2, 27, { align: 'center' }); startY = 32;
             }
             
             let rawData = [];
