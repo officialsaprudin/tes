@@ -159,15 +159,16 @@
             
             <div class="bg-white rounded-xl shadow overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-max">
+                    <!-- FIX: min-w-max removed to allow proper table sizing on smaller screens -->
+                    <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-100 text-gray-600 text-sm uppercase">
-                                <th class="p-4 border-b w-1/4">Nama Santri</th>
-                                <th class="p-4 border-b w-1/4">Kelas / Wali Kelas</th>
+                                <th class="p-4 border-b w-1/5">Nama Santri</th>
+                                <th class="p-4 border-b w-1/5">Kelas / Wali Kelas</th>
                                 <th class="p-4 border-b">Status</th>
                                 <th class="p-4 border-b">Hafalan</th>
                                 <th class="p-4 border-b">Jilid</th>
-                                <th class="p-4 border-b">Nilai (Haf/Jld)</th>
+                                <th class="p-4 border-b">Nilai</th>
                                 <th class="p-4 border-b w-1/5">Catatan</th>
                                 <th class="p-4 border-b text-center">Aksi</th>
                             </tr>
@@ -202,7 +203,7 @@
                 </div>
             </div>
 
-            <!-- Kontainer Utama Rekap Harian (Berisi Jurnal + Tabel Dinamis) -->
+            <!-- Kontainer Utama Rekap Harian (Berisi Jurnal + Tabel Dinamis Berderet) -->
             <div id="rekap-container"></div>
         </div>
 
@@ -210,12 +211,12 @@
 
     <!-- Modal Form (Tambah/Edit Santri) -->
     <div id="modal-form" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
                 <h3 id="modal-title" class="font-bold text-lg">Update Progres</h3>
                 <button onclick="closeModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <form id="santri-form" class="p-6 overflow-y-auto max-h-[80vh]">
+            <form id="santri-form" class="p-6 overflow-y-auto">
                 <input type="hidden" id="form-id">
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-1">Nama Santri</label>
@@ -411,8 +412,8 @@
                     {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 4", halaman: "15", surah: "An-Naba", ayat: "30", nilaiHafalan: "Lancar", nilaiJilid: "Lancar", catatan: "Tajwid makin mantap"},
                     {timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), kehadiran: "Alpa", jilid: "-", halaman: "-", surah: "-", ayat: "-", nilaiHafalan: "-", nilaiJilid: "-", catatan: "-"}
                 ]},
-                { id: "2", nama: "Ahmad Yasin", kelas: "Kelas Madinah", kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", catatan: "Sering ketukar huruf Sin dan Syin", riwayat: [
-                    {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", catatan: "Sering ketukar huruf Sin dan Syin"}
+                { id: "2", nama: "Ahmad Yasin", kelas: "Kelas Madinah", kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", catatan: "Sering ketukar huruf Sin dan Syin, perbanyak murajaah agar tidak salah.", riwayat: [
+                    {timestamp: new Date().toISOString(), kehadiran: "Hadir", jilid: "Jilid 2", halaman: "10", surah: "Al-Ikhlas", ayat: "4", nilaiHafalan: "Lancar", nilaiJilid: "Kurang Lancar", catatan: "Sering ketukar huruf Sin dan Syin, perbanyak murajaah agar tidak salah."}
                 ]}
             ];
             pengajarMap["Kelas Madinah"] = "Ust. Saprudin S.Ag";
@@ -623,6 +624,7 @@
                 let badgeHafalan = getKetBadge(s.nilaiHafalan || s.keterangan);
                 let badgeJilid = getKetBadge(s.nilaiJilid || s.keterangan);
 
+                // FIX: break-words and max-w added to Catatan column
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-4 font-bold text-gray-800">${s.nama}</td>
@@ -637,7 +639,7 @@
                             <div class="mb-1 flex items-center space-x-1"><span class="text-[10px] text-gray-400 w-6">Haf:</span> ${badgeHafalan}</div>
                             <div class="flex items-center space-x-1"><span class="text-[10px] text-gray-400 w-6">Jld:</span> ${badgeJilid}</div>
                         </td>
-                        <td class="p-4 text-xs text-gray-600 italic">${s.catatan || '-'}</td>
+                        <td class="p-4 text-xs text-gray-600 italic break-words max-w-[200px] whitespace-normal">${s.catatan || '-'}</td>
                         <td class="p-4 text-center">
                             <div class="flex justify-center space-x-3 text-lg">
                                 ${actionButtons}
@@ -805,6 +807,7 @@
                     let badgeHafalan = getKetBadge(r.nilaiHafalan || r.keterangan);
                     let badgeJilid = getKetBadge(r.nilaiJilid || r.keterangan);
 
+                    // FIX: word break added
                     tbody.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
                             <td class="p-2 text-gray-600">${fmt}</td>
@@ -815,7 +818,7 @@
                                 <div class="mb-1 flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">H:</span> ${badgeHafalan}</div>
                                 <div class="flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">J:</span> ${badgeJilid}</div>
                             </td>
-                            <td class="p-2 text-xs text-gray-600 italic">${r.catatan || '-'}</td>
+                            <td class="p-2 text-xs text-gray-600 italic break-words max-w-[150px] whitespace-normal">${r.catatan || '-'}</td>
                         </tr>
                     `;
                 });
@@ -932,10 +935,7 @@
 
             // Loop untuk setiap kelas yang akan dirender
             classesToRender.forEach(cls => {
-                // Filter santri yang punya data hari ini di kelas ini
                 let santriHariIni = dataStore.filter(s => s.kelas === cls && s.riwayat && s.riwayat.some(r => r.timestamp.startsWith(tglFilter)));
-                
-                // Lewati render blok jika tidak ada data santri sama sekali di hari tersebut untuk kelas ini
                 if(santriHariIni.length === 0) return;
 
                 const targetJurnal = jurnalStore.find(j => j.id === `${cls}_${tglFilter}`);
@@ -945,7 +945,6 @@
                     btnJurnalHtml = `<button onclick="openJurnalModal('${cls}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>`;
                 }
 
-                // Bangun Kotak Jurnal
                 let jurnalHtml = `
                     <div class="bg-indigo-50 p-4 rounded-t-xl border-t border-l border-r border-indigo-100 mt-6">
                         <div class="flex justify-between items-center mb-4">
@@ -969,7 +968,6 @@
                     </div>
                 `;
 
-                // Bangun Tabel Baris
                 let rowsHtml = '';
                 santriHariIni.forEach(s => {
                     let adaData = s.riwayat.find(r => r.timestamp.startsWith(tglFilter));
@@ -978,6 +976,7 @@
                         let badgeHafalan = getKetBadge(adaData.nilaiHafalan || adaData.keterangan);
                         let badgeJilid = getKetBadge(adaData.nilaiJilid || adaData.keterangan);
 
+                        // FIX: Word wrap enabled on Catatan column in Rekap table
                         rowsHtml += `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="p-3 font-bold text-gray-800">${s.nama}</td>
@@ -992,21 +991,21 @@
                                     <div class="mb-1 flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">H:</span> ${badgeHafalan}</div>
                                     <div class="flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">J:</span> ${badgeJilid}</div>
                                 </td>
-                                <td class="p-3 text-xs text-gray-600 italic">${adaData.catatan || '-'}</td>
+                                <td class="p-3 text-xs text-gray-600 italic break-words max-w-[150px] whitespace-normal">${adaData.catatan || '-'}</td>
                             </tr>
                         `;
                     }
                 });
 
-                // Bangun Tabel Utuh
+                // FIX: min-w-max removed to allow proper table sizing
                 let tableHtml = `
                     <div class="bg-white rounded-b-xl shadow overflow-hidden mb-6 border border-gray-100">
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm min-w-max">
+                            <table class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
-                                        <th class="p-3 w-1/4">Nama Santri</th>
-                                        <th class="p-3 w-1/4">Kelas / Wali Kelas</th>
+                                        <th class="p-3 w-1/5">Nama Santri</th>
+                                        <th class="p-3 w-1/5">Kelas / Wali Kelas</th>
                                         <th class="p-3">Status</th>
                                         <th class="p-3">Hafalan</th>
                                         <th class="p-3">Jilid</th>
@@ -1020,7 +1019,6 @@
                     </div>
                 `;
 
-                // Gabungkan dan tempel ke container
                 rekapContainer.innerHTML += jurnalHtml + tableHtml;
             });
 
@@ -1040,14 +1038,10 @@
         // ==========================================
         
         function handlePDFOutput(doc, filename) {
-            // Deteksi device apakah menggunakan mobile/tablet
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
             if (isMobile) {
-                // Di HP: Wajib download langsung biar tidak diblokir browser
                 doc.save(filename);
             } else {
-                // Di PC/Laptop: Buka preview di tab baru (Lebih elegan)
                 const blob = doc.output('blob');
                 window.open(URL.createObjectURL(blob), '_blank');
             }
@@ -1098,7 +1092,6 @@
                 const pengajar = pengajarMap[kelasFilter] || "Belum diatur";
                 doc.text(`Kelas: ${kelasFilter}`, 14, 30); doc.text(`Pengajar: ${pengajar}`, 14, 36); 
                 
-                // Tambahkan info Jurnal Harian jika ada
                 const targetJurnal = jurnalStore.find(j => j.id === `${kelasFilter}_${tgl}`);
                 if(targetJurnal) {
                     doc.setFontSize(9);
@@ -1167,7 +1160,6 @@
             errEl.classList.add('hidden');
             
             if (is_preview) {
-                // MOCK LOGIN PREVIEW
                 if (em.includes('admin')) {
                     currentUserRole = 'admin';
                     currentUserClasses = ['Semua'];
@@ -1207,7 +1199,6 @@
             }
         });
 
-        // STATE LISTENER FIREBASE UTAMA
         if (!is_preview) {
             onAuthStateChanged(auth, async (user) => {
                 if(user) {
@@ -1226,7 +1217,6 @@
                             currentUserClasses = Array.isArray(kl) ? kl : [kl];
                             currentLembagaName = dt.lembaga || 'Ringkasan Hari Ini';
                         } else {
-                            // Fallback jika database user hilang
                             currentUserRole = 'ustadz';
                             currentUserClasses = ['Kelas Umum'];
                         }
