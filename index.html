@@ -201,45 +201,8 @@
                 </div>
             </div>
 
-            <!-- JURNAL KELAS HARIAN UI -->
-            <div id="jurnal-section" class="bg-indigo-50 p-4 rounded-xl shadow-sm mb-6 hidden border border-indigo-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-indigo-800"><i class="fa-solid fa-book-journal-whills mr-2"></i> Jurnal Kelas Harian</h3>
-                    <button id="btn-isi-jurnal" onclick="openJurnalModal()" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
-                        <p class="text-xs text-indigo-500 font-bold mb-1">Tadarus Surah</p>
-                        <p id="jurnal-view-tadarus" class="text-sm font-medium text-gray-800">-</p>
-                    </div>
-                    <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
-                        <p class="text-xs text-indigo-500 font-bold mb-1">Murojaah (Surah & Ayat)</p>
-                        <p id="jurnal-view-murojaah" class="text-sm font-medium text-gray-800">-</p>
-                    </div>
-                    <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
-                        <p class="text-xs text-indigo-500 font-bold mb-1">Materi Pembelajaran</p>
-                        <p id="jurnal-view-materi" class="text-sm font-medium text-gray-800">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow overflow-hidden p-4">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm min-w-max">
-                        <thead>
-                            <tr class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
-                                <th class="p-3 w-1/4">Nama Santri</th>
-                                <th class="p-3 w-1/4">Kelas / Wali Kelas</th>
-                                <th class="p-3">Status</th>
-                                <th class="p-3">Hafalan</th>
-                                <th class="p-3">Jilid</th>
-                                <th class="p-3">Nilai</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rekap-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
+            <!-- CONTAINER REKAP DINAMIS PER KELAS -->
+            <div id="rekap-container" class="space-y-8"></div>
         </div>
 
     </main>
@@ -372,7 +335,8 @@
                 <button onclick="closeJurnalModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <form id="jurnal-form" class="p-6">
-                <p class="text-xs text-gray-500 mb-4 bg-indigo-50 p-2 rounded">Jurnal ini akan tersimpan untuk kelas dan tanggal yang sedang difilter di halaman Rekap.</p>
+                <input type="hidden" id="form-jurnal-kelas-hidden">
+                <p class="text-xs text-gray-500 mb-4 bg-indigo-50 p-2 rounded">Jurnal ini akan tersimpan untuk kelas dan tanggal yang dipilih.</p>
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-1">Tadarus Surah</label>
                     <input type="text" id="form-jurnal-tadarus" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Cth: Al-Baqarah (1-10)">
@@ -876,10 +840,13 @@
         });
 
         // --- JURNAL KELAS HARIAN CRUD ---
-        window.openJurnalModal = () => {
+        window.openJurnalModal = (kelasTujuan) => {
             const tgl = document.getElementById('filter-tanggal').value;
-            const kelas = document.getElementById('filter-kelas-rekap').value;
-            if (kelas === "Semua") { alert("Pilih satu kelas spesifik terlebih dahulu!"); return; }
+            const kelas = kelasTujuan || document.getElementById('filter-kelas-rekap').value;
+            
+            if (kelas === "Semua") { alert("Terjadi kesalahan, kelas tidak terdeteksi!"); return; }
+            
+            document.getElementById('form-jurnal-kelas-hidden').value = kelas;
             
             const jId = `${kelas}_${tgl}`;
             const targetJurnal = jurnalStore.find(j => j.id === jId);
@@ -890,6 +857,7 @@
                 document.getElementById('form-jurnal-materi').value = targetJurnal.materi || '';
             } else {
                 document.getElementById('jurnal-form').reset();
+                document.getElementById('form-jurnal-kelas-hidden').value = kelas; // re-assign sesudah reset form
             }
             document.getElementById('modal-jurnal').classList.remove('hidden');
         };
@@ -898,7 +866,7 @@
         document.getElementById('jurnal-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const tgl = document.getElementById('filter-tanggal').value;
-            const kelas = document.getElementById('filter-kelas-rekap').value;
+            const kelas = document.getElementById('form-jurnal-kelas-hidden').value;
             const jId = `${kelas}_${tgl}`;
             
             const newData = {
@@ -930,61 +898,131 @@
         function renderRekap() {
             const tglFilter = document.getElementById('filter-tanggal').value;
             const kelasFilter = document.getElementById('filter-kelas-rekap').value;
-            const tbody = document.getElementById('rekap-tbody');
+            const container = document.getElementById('rekap-container');
             const infoPengajar = document.getElementById('info-pengajar-rekap');
-            const jurnalSect = document.getElementById('jurnal-section');
-            tbody.innerHTML = '';
+            container.innerHTML = '';
             
             if (kelasFilter !== "Semua") {
                 const pengajar = pengajarMap[kelasFilter] || "Belum diatur";
                 infoPengajar.innerHTML = `<i class="fa-solid fa-chalkboard-user mr-1"></i> Difilter untuk: ${pengajar}`;
                 infoPengajar.classList.remove('hidden');
-                
-                // Tampilkan Jurnal UI
-                jurnalSect.classList.remove('hidden');
-                const targetJurnal = jurnalStore.find(j => j.id === `${kelasFilter}_${tglFilter}`);
-                document.getElementById('jurnal-view-tadarus').innerText = targetJurnal?.tadarus || '-';
-                document.getElementById('jurnal-view-murojaah').innerText = targetJurnal?.murojaah || '-';
-                document.getElementById('jurnal-view-materi').innerText = targetJurnal?.materi || '-';
-                
-                // Sembunyikan tombol Isi Jurnal jika yang login adalah Admin
-                const btnIsiJurnal = document.getElementById('btn-isi-jurnal');
-                if(btnIsiJurnal) btnIsiJurnal.style.display = currentUserRole === 'admin' ? 'none' : 'block';
             } else {
                 infoPengajar.classList.add('hidden');
-                jurnalSect.classList.add('hidden');
             }
             
-            dataStore.filter(s => {
-                if(currentUserRole === 'ustadz' && !currentUserClasses.includes(s.kelas)) return false;
-                return kelasFilter === "Semua" || s.kelas === kelasFilter;
-            }).forEach(s => {
-                let adaData = (s.riwayat || []).find(r => r.timestamp.startsWith(tglFilter));
-                if(adaData) {
-                    const namaWaliKelas = pengajarMap[s.kelas] || '-';
-                    let badgeHafalan = getKetBadge(adaData.nilaiHafalan || adaData.keterangan);
-                    let badgeJilid = getKetBadge(adaData.nilaiJilid || adaData.keterangan);
+            // Siapkan array kelas mana saja yang mau dirender blok-nya
+            let targetClasses = [];
+            if (kelasFilter === "Semua") {
+                Array.from(classesSet).sort().forEach(cls => {
+                    if (currentUserRole === 'admin' || currentUserClasses.includes(cls)) targetClasses.push(cls);
+                });
+            } else {
+                targetClasses.push(kelasFilter);
+            }
 
-                    tbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-3 font-bold text-gray-800">${s.nama}</td>
-                            <td class="p-3">
-                                <div class="font-medium text-gray-800">${s.kelas || '-'}</div>
-                                <div class="text-xs text-indigo-600 font-bold mt-0.5"><i class="fa-solid fa-user-tie mr-1"></i> ${namaWaliKelas}</div>
-                            </td>
-                            <td class="p-3">${getStatusBadge(adaData.kehadiran)}</td>
-                            <td class="p-3">${adaData.surah} <br><span class="text-gray-500 text-[10px]">(Ayat ${adaData.ayat})</span></td>
-                            <td class="p-3">${adaData.jilid} <br><span class="text-gray-500 text-[10px]">(Hal ${adaData.halaman})</span></td>
-                            <td class="p-3">
-                                <div class="mb-1 flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">H:</span> ${badgeHafalan}</div>
-                                <div class="flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">J:</span> ${badgeJilid}</div>
-                            </td>
-                        </tr>
-                    `;
+            if(targetClasses.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data kelas yang tersedia.</p>';
+                return;
+            }
+
+            // Render UI per blok Kelas
+            targetClasses.forEach(cls => {
+                const pengajarCls = pengajarMap[cls] || '-';
+                const targetJurnal = jurnalStore.find(j => j.id === `${cls}_${tglFilter}`);
+                const tadarusVal = targetJurnal?.tadarus || '-';
+                const murojaahVal = targetJurnal?.murojaah || '-';
+                const materiVal = targetJurnal?.materi || '-';
+
+                const muridDiKelas = dataStore.filter(s => s.kelas === cls);
+                
+                let rowsHtml = '';
+                muridDiKelas.forEach(s => {
+                    let adaData = (s.riwayat || []).find(r => r.timestamp.startsWith(tglFilter));
+                    if(adaData) {
+                        let badgeHafalan = getKetBadge(adaData.nilaiHafalan || adaData.keterangan);
+                        let badgeJilid = getKetBadge(adaData.nilaiJilid || adaData.keterangan);
+
+                        rowsHtml += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3 font-bold text-gray-800">${s.nama}</td>
+                                <td class="p-3">
+                                    <div class="font-medium text-gray-800">${s.kelas || '-'}</div>
+                                    <div class="text-xs text-indigo-600 font-bold mt-0.5"><i class="fa-solid fa-user-tie mr-1"></i> ${pengajarCls}</div>
+                                </td>
+                                <td class="p-3">${getStatusBadge(adaData.kehadiran)}</td>
+                                <td class="p-3">${adaData.surah} <br><span class="text-gray-500 text-[10px]">(Ayat ${adaData.ayat})</span></td>
+                                <td class="p-3">${adaData.jilid} <br><span class="text-gray-500 text-[10px]">(Hal ${adaData.halaman})</span></td>
+                                <td class="p-3">
+                                    <div class="mb-1 flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">H:</span> ${badgeHafalan}</div>
+                                    <div class="flex items-center space-x-1"><span class="text-[9px] text-gray-400 w-4">J:</span> ${badgeJilid}</div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                // Auto-Hide kelas yang sama sekali nggak ada aktifitas di hari itu pas lagi mode "Semua"
+                if (rowsHtml === '' && !targetJurnal && kelasFilter === "Semua") return; 
+                
+                if (rowsHtml === '') {
+                    rowsHtml = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Tidak ada data ngaji di tanggal ini</td></tr>';
                 }
+
+                // Sembunyikan tombol jurnal kalau rolenya admin
+                const btnJurnal = currentUserRole === 'admin' ? '' : `<button onclick="openJurnalModal('${cls}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold shadow hover:bg-indigo-700 transition">Isi/Edit Jurnal</button>`;
+
+                container.innerHTML += `
+                    <div class="mb-8 border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                        <!-- Class Header -->
+                        <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                            <h3 class="font-bold text-lg text-gray-800">${cls}</h3>
+                            <span class="text-sm text-indigo-600 font-bold"><i class="fa-solid fa-chalkboard-user mr-1"></i> ${pengajarCls}</span>
+                        </div>
+
+                        <!-- Jurnal Section -->
+                        <div class="bg-indigo-50/50 p-4 border-b border-indigo-50">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-bold text-indigo-800 text-sm"><i class="fa-solid fa-book-journal-whills mr-2"></i> Jurnal Kelas</h4>
+                                ${btnJurnal}
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
+                                    <p class="text-xs text-indigo-500 font-bold mb-1">Tadarus Surah</p>
+                                    <p class="text-sm font-medium text-gray-800">${tadarusVal}</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
+                                    <p class="text-xs text-indigo-500 font-bold mb-1">Murojaah (Surah & Ayat)</p>
+                                    <p class="text-sm font-medium text-gray-800">${murojaahVal}</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-lg border border-indigo-50 shadow-sm">
+                                    <p class="text-xs text-indigo-500 font-bold mb-1">Materi Pembelajaran</p>
+                                    <p class="text-sm font-medium text-gray-800">${materiVal}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table Section -->
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left border-collapse text-sm min-w-max">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                                        <th class="p-3 w-1/4">Nama Santri</th>
+                                        <th class="p-3 w-1/4">Kelas / Wali Kelas</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Hafalan</th>
+                                        <th class="p-3">Jilid</th>
+                                        <th class="p-3">Nilai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rowsHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
             });
-            if(tbody.innerHTML === '') {
-                 tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Tidak ada data di tanggal/kelas ini</td></tr>';
+            
+            if(container.innerHTML === '') {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data di tanggal/kelas ini</p>';
             }
         }
 
